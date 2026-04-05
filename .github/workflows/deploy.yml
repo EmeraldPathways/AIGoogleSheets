@@ -2,17 +2,8 @@ name: Test and Deploy App Engine
 
 on:
   push:
-    branches: ["main", "staging"]
+    branches: ["main"]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Deployment environment"
-        required: true
-        default: "staging"
-        type: choice
-        options:
-          - staging
-          - production
 
 permissions:
   contents: read
@@ -44,9 +35,8 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'production' || 'staging') }}
+    environment: production
     env:
-      DEPLOY_ENV: ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'production' || 'staging') }}
       GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
@@ -65,17 +55,6 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Resolve deployment config
-        id: deploy_config
-        run: |
-          if [ "${DEPLOY_ENV}" = "production" ]; then
-            echo "config=app.prod.yaml" >> "$GITHUB_OUTPUT"
-            echo "service_url=https://${GCP_PROJECT_ID}.appspot.com/healthz" >> "$GITHUB_OUTPUT"
-          else
-            echo "config=app.staging.yaml" >> "$GITHUB_OUTPUT"
-            echo "service_url=https://staging-dot-${GCP_PROJECT_ID}.appspot.com/healthz" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Capture previous version
         id: previous
         run: |
@@ -85,12 +64,12 @@ jobs:
       - name: Deploy App Engine
         id: deploy
         run: |
-          VERSION="${DEPLOY_ENV}-${GITHUB_SHA::12}"
+          VERSION="production-${GITHUB_SHA::12}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          gcloud app deploy "${{ steps.deploy_config.outputs.config }}" --version "${VERSION}" --promote --quiet
+          gcloud app deploy app.prod.yaml --version "${VERSION}" --promote --quiet
 
       - name: Smoke test
-        run: curl --fail "${{ steps.deploy_config.outputs.service_url }}"
+        run: curl --fail "https://${GCP_PROJECT_ID}.appspot.com/healthz"
 
       - name: Roll back on failed smoke test
         if: failure() && steps.previous.outputs.version != ''

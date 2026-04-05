@@ -20,7 +20,7 @@ Browser-based Google Sheets integration with a Kimi-first multi-provider AI arch
 - Redis-backed rate limiting when `REDIS_URL` is configured
 - Apps Script sidebar bridge with context sync and result insertion
 - Environment-aware secret lookup via Secret Manager resource references
-- Staged App Engine config (`app.staging.yaml`, `app.prod.yaml`) and deployment rollback workflow
+- Production App Engine config (`app.prod.yaml`) and deployment rollback workflow
 
 ## Local run
 1. Create and activate a virtualenv.
@@ -49,7 +49,7 @@ Browser-based Google Sheets integration with a Kimi-first multi-provider AI arch
 4. Reload the sheet and use **AI Assistant → Open Sidebar**.
 
 ## GitHub → Google Cloud auto deploy
-The workflow uses Workload Identity Federation (OIDC) and deploys on pushes to `main`.
+The workflow uses Workload Identity Federation (OIDC) and deploys production on pushes to `main` or via manual workflow dispatch.
 
 Set repository secrets:
 - `GCP_PROJECT_ID`
