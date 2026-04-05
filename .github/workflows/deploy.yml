@@ -69,7 +69,7 @@ jobs:
           gcloud app deploy app.prod.yaml --version "${VERSION}" --promote --quiet
 
       - name: Smoke test
-        run: curl --fail "https://${GCP_PROJECT_ID}.appspot.com/healthz"
+        run: curl --fail "https://${GCP_PROJECT_ID}.uc.r.appspot.com/healthz"
 
       - name: Roll back on failed smoke test
         if: failure() && steps.previous.outputs.version != ''
