@@ -4,6 +4,7 @@ entrypoint: gunicorn -b :$PORT app:app
 
 env_variables:
   APP_ENV: "production"
+  GOOGLE_CLIENT_ID: "243073050765-rrtphqevc23nj1nka4uteii0hb94nbb5.apps.googleusercontent.com"
   ALLOWED_ORIGINS: "https://your-project.appspot.com"
   DEFAULT_AI_PROVIDER: "kimi"
   RATE_LIMIT_WINDOW_SECONDS: "60"
