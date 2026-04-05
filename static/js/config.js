@@ -1,7 +1,7 @@
+import { fetchJson } from './api.js';
+
 export async function loadServerConfig() {
-  const res = await fetch('/api/config');
-  if (!res.ok) throw new Error('Unable to load runtime config');
-  return res.json();
+  return fetchJson('/api/config', {}, { maxAttempts: 2, baseDelayMs: 150 });
 }
 
 export function extractSpreadsheetId(rawInput) {

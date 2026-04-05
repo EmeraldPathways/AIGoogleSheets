@@ -1,21 +1,25 @@
-name: Deploy to App Engine
+name: Test and Deploy App Engine
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "staging"]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
 
 permissions:
   contents: read
   id-token: write
 
-env:
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
 jobs:
-  test-and-deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,15 +28,31 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Compile Python sources
+        run: python -m py_compile app.py tests/test_app.py
+
       - name: Run tests
         run: pytest -q
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'production' || 'staging') }}
+    env:
+      DEPLOY_ENV: ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'production' || 'staging') }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud (OIDC)
         uses: google-github-actions/auth@v2
@@ -45,10 +65,34 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
+      - name: Resolve deployment config
+        id: deploy_config
+        run: |
+          if [ "${DEPLOY_ENV}" = "production" ]; then
+            echo "config=app.prod.yaml" >> "$GITHUB_OUTPUT"
+            echo "service_url=https://${GCP_PROJECT_ID}.appspot.com/healthz" >> "$GITHUB_OUTPUT"
+          else
+            echo "config=app.staging.yaml" >> "$GITHUB_OUTPUT"
+            echo "service_url=https://staging-dot-${GCP_PROJECT_ID}.appspot.com/healthz" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Capture previous version
+        id: previous
+        run: |
+          PREVIOUS=$(gcloud app versions list --service=default --sort-by="~version.createTime" --format="value(id)" --limit=1)
+          echo "version=${PREVIOUS}" >> "$GITHUB_OUTPUT"
+
       - name: Deploy App Engine
-        run: gcloud app deploy app.yaml --quiet
+        id: deploy
+        run: |
+          VERSION="${DEPLOY_ENV}-${GITHUB_SHA::12}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          gcloud app deploy "${{ steps.deploy_config.outputs.config }}" --version "${VERSION}" --promote --quiet
 
       - name: Smoke test
+        run: curl --fail "${{ steps.deploy_config.outputs.service_url }}"
+
+      - name: Roll back on failed smoke test
+        if: failure() && steps.previous.outputs.version != ''
         run: |
-          SERVICE_URL="https://${{ env.GCP_PROJECT_ID }}.appspot.com/healthz"
-          curl --fail "$SERVICE_URL"
+          gcloud app services set-traffic default --splits "${{ steps.previous.outputs.version }}"=1 --quiet

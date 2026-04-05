@@ -1,3 +1,5 @@
+import { postEvent, retryAsync } from './api.js';
+
 function gapiReady() {
   return new Promise((resolve, reject) => {
     if (!window.gapi) {
@@ -18,23 +20,47 @@ function gapiReady() {
 }
 
 export async function readSheet(spreadsheetId, range, accessToken) {
-  await gapiReady();
-  window.gapi.client.setToken({ access_token: accessToken });
-  const res = await window.gapi.client.sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range,
+  const started = performance.now();
+  const result = await retryAsync(async () => {
+    await gapiReady();
+    window.gapi.client.setToken({ access_token: accessToken });
+    const res = await window.gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+    });
+    return res.result.values || [];
+  }, {
+    maxAttempts: 2,
+    baseDelayMs: 200,
   });
-  return res.result.values || [];
+  postEvent('sheet_read', {
+    component: 'sheets',
+    durationMs: Math.round(performance.now() - started),
+    status: 'success',
+  });
+  return result;
 }
 
 export async function appendSheet(spreadsheetId, range, values, accessToken) {
-  await gapiReady();
-  window.gapi.client.setToken({ access_token: accessToken });
-  return window.gapi.client.sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range,
-    valueInputOption: 'RAW',
-    insertDataOption: 'INSERT_ROWS',
-    resource: { values },
+  const started = performance.now();
+  const result = await retryAsync(async () => {
+    await gapiReady();
+    window.gapi.client.setToken({ access_token: accessToken });
+    return window.gapi.client.sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range,
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      resource: { values },
+    });
+  }, {
+    maxAttempts: 2,
+    baseDelayMs: 200,
   });
+  postEvent('sheet_append', {
+    component: 'sheets',
+    durationMs: Math.round(performance.now() - started),
+    status: 'success',
+  });
+  return result;
 }

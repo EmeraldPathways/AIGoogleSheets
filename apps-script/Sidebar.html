@@ -4,17 +4,55 @@
     <base target="_top" />
     <style>
       body { font-family: Arial, sans-serif; margin: 0; padding: 12px; }
-      iframe { border: 0; width: 100%; height: 90vh; }
+      iframe { border: 0; width: 100%; height: 88vh; border-radius: 10px; background: #fff; }
       .meta { font-size: 12px; color: #475569; margin-bottom: 8px; }
     </style>
   </head>
   <body>
-    <div class="meta" id="context">Loading sheet context…</div>
-    <iframe src="YOUR_DEPLOYED_APP_URL"></iframe>
+    <div class="meta" id="context">Loading sheet context...</div>
+    <iframe id="app-frame" src="YOUR_DEPLOYED_APP_URL"></iframe>
     <script>
-      google.script.run.withSuccessHandler(function(ctx) {
-        document.getElementById('context').textContent = 'Sheet: ' + ctx.spreadsheetName + ' | Range: ' + (ctx.activeRangeA1 || 'N/A');
-      }).getActiveSpreadsheetContext();
+      var frame = document.getElementById('app-frame');
+
+      function pushContext() {
+        google.script.run.withSuccessHandler(function(ctx) {
+          document.getElementById('context').textContent =
+            'Sheet: ' + ctx.spreadsheetName + ' | Range: ' + (ctx.activeRangeA1 || 'N/A');
+          frame.contentWindow.postMessage(
+            { source: 'apps-script-sidebar', type: 'HOST_CONTEXT', context: ctx },
+            '*'
+          );
+        }).getActiveSpreadsheetContext();
+      }
+
+      window.addEventListener('message', function(event) {
+        var data = event.data || {};
+        if (data.source !== 'aigs-webapp') return;
+
+        if (data.type === 'APP_READY' || data.type === 'REQUEST_CONTEXT') {
+          pushContext();
+          return;
+        }
+
+        if (data.type === 'INSERT_RESULT') {
+          google.script.run.withSuccessHandler(function(result) {
+            frame.contentWindow.postMessage(
+              { source: 'apps-script-sidebar', type: 'INSERT_RESULT_ACK', result: result },
+              '*'
+            );
+          }).insertAnalysisResult(data.payload || {});
+          return;
+        }
+
+        if (data.type === 'RESTORE_SESSION') {
+          frame.contentWindow.postMessage(
+            { source: 'apps-script-sidebar', type: 'RESTORED_SESSION', session: data.session },
+            '*'
+          );
+        }
+      });
+
+      pushContext();
     </script>
   </body>
 </html>

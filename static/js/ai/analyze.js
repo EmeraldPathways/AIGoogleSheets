@@ -1,4 +1,6 @@
-export async function analyzeWithFallback(sheetData, task, preferredProvider = 'kimi') {
+import { fetchJson } from '../api.js';
+
+export async function analyzeWithFallback(sheetData, task, preferredProvider = 'kimi', retryPolicy = {}) {
   const aiPayload = {
     model: preferredProvider === 'openai' ? 'gpt-4.1-mini' : 'kimi-k2-5',
     messages: [
@@ -10,16 +12,19 @@ export async function analyzeWithFallback(sheetData, task, preferredProvider = '
   };
 
   const providerOrder = preferredProvider === 'openai' ? ['openai', 'kimi'] : ['kimi', 'openai'];
-  const res = await fetch('/api/ai/analyze', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sheetData, aiPayload, providerOrder }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    const details = JSON.stringify(data.attempts || data, null, 2);
-    throw new Error(`Analysis failed: ${details}`);
-  }
+  const data = await fetchJson(
+    '/api/ai/analyze',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sheetData, aiPayload, providerOrder }),
+    },
+    {
+      maxAttempts: retryPolicy.maxAttempts || 3,
+      baseDelayMs: retryPolicy.baseDelayMs || 300,
+      retryableStatuses: retryPolicy.retryableStatuses || [429, 500, 502, 503, 504],
+    },
+  );
 
   return {
     provider: data.provider,

@@ -30,8 +30,16 @@
         <button id="load-sheet-btn" disabled>Load Sheet Data</button>
       </section>
 
+      <section class="panel" id="host-panel">
+        <h2>3) Sidebar Host Bridge</h2>
+        <p class="hint">When opened from Apps Script, the app can sync the active range and send commands back to the host sheet.</p>
+        <button id="sync-sidebar-btn">Sync Sidebar Context</button>
+        <button id="insert-result-btn">Insert Current Result into Sheet</button>
+        <pre id="host-output">Standalone mode.</pre>
+      </section>
+
       <section class="panel" id="analysis-panel">
-        <h2>3) Analyze</h2>
+        <h2>4) Analyze</h2>
         <label>Provider</label>
         <select id="provider-select">
           <option value="kimi">Kimi (primary)</option>
@@ -47,14 +55,22 @@
       </section>
 
       <section class="panel" id="drive-panel">
-        <h2>4) Save / Load from Drive</h2>
+        <h2>5) Save / Load from Drive</h2>
+        <p id="session-status">No saved Drive session yet.</p>
         <button id="save-drive-btn" disabled>Save Current Result to Drive</button>
         <button id="list-drive-btn" disabled>List Saved Sessions</button>
+        <label>Restore by Session ID</label>
+        <input id="restore-session-id" placeholder="Optional session id" />
+        <label>Restore Version</label>
+        <input id="restore-version" placeholder="Latest if blank" />
+        <label>Or Restore by Drive File ID</label>
+        <input id="restore-file-id" placeholder="Optional drive file id" />
+        <button id="restore-drive-btn" disabled>Restore Session</button>
         <pre id="drive-output">No Drive operations yet.</pre>
       </section>
 
       <section class="panel" id="results-panel">
-        <h2>5) Results</h2>
+        <h2>6) Results</h2>
         <pre id="results-output">No results yet.</pre>
       </section>
     </main>

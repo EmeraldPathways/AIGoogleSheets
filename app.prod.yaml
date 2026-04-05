@@ -3,11 +3,11 @@ runtime: python312
 entrypoint: gunicorn -b :$PORT app:app
 
 env_variables:
-  APP_ENV: "development"
+  APP_ENV: "production"
   ALLOWED_ORIGINS: "https://your-project.appspot.com"
   DEFAULT_AI_PROVIDER: "kimi"
   RATE_LIMIT_WINDOW_SECONDS: "60"
-  RATE_LIMIT_MAX_REQUESTS: "20"
+  RATE_LIMIT_MAX_REQUESTS: "40"
   REDIS_URL: ""
   MAX_CELL_CHARS: "2000"
   MAX_ROWS: "500"
@@ -32,5 +32,5 @@ handlers:
     secure: always
 
 automatic_scaling:
-  min_instances: 0
-  max_instances: 2
+  min_instances: 1
+  max_instances: 4
