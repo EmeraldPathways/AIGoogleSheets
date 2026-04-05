@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multi-AI Google Sheets Integration</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Google Sheets + Multi-AI (Kimi-first)</h1>
+      <p class="hint">Can run standalone or in Google Sheets sidebar via Apps Script wrapper.</p>
+
+      <section class="panel" id="auth-panel">
+        <h2>1) Google Authentication</h2>
+        <p id="auth-status">Not signed in.</p>
+        <button id="sign-in-btn">Sign in with Google</button>
+        <button id="sign-in-drive-btn" disabled>Enable Drive Save (extra scope)</button>
+        <button id="sign-out-btn" disabled>Sign out</button>
+      </section>
+
+      <section class="panel" id="sheet-panel">
+        <h2>2) Connect Sheet</h2>
+        <label>Spreadsheet ID or URL</label>
+        <input id="spreadsheet-input" placeholder="https://docs.google.com/spreadsheets/d/..." />
+        <label>Range (A1 notation)</label>
+        <input id="range-input" value="Sheet1!A1:Z200" />
+        <button id="load-sheet-btn" disabled>Load Sheet Data</button>
+      </section>
+
+      <section class="panel" id="analysis-panel">
+        <h2>3) Analyze</h2>
+        <label>Provider</label>
+        <select id="provider-select">
+          <option value="kimi">Kimi (primary)</option>
+          <option value="openai">OpenAI</option>
+        </select>
+        <label>Task</label>
+        <select id="task-select">
+          <option value="summarize">Summarize</option>
+          <option value="find anomalies">Find anomalies</option>
+          <option value="categorize rows">Categorize rows</option>
+        </select>
+        <button id="analyze-btn" disabled>Run Analysis (fallback enabled)</button>
+      </section>
+
+      <section class="panel" id="drive-panel">
+        <h2>4) Save / Load from Drive</h2>
+        <button id="save-drive-btn" disabled>Save Current Result to Drive</button>
+        <button id="list-drive-btn" disabled>List Saved Sessions</button>
+        <pre id="drive-output">No Drive operations yet.</pre>
+      </section>
+
+      <section class="panel" id="results-panel">
+        <h2>5) Results</h2>
+        <pre id="results-output">No results yet.</pre>
+      </section>
+    </main>
+
+    <script type="module" src="/static/js/main.js"></script>
+  </body>
+</html>

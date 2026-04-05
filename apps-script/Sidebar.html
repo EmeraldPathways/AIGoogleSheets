@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top" />
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 12px; }
+      iframe { border: 0; width: 100%; height: 90vh; }
+      .meta { font-size: 12px; color: #475569; margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="meta" id="context">Loading sheet context…</div>
+    <iframe src="YOUR_DEPLOYED_APP_URL"></iframe>
+    <script>
+      google.script.run.withSuccessHandler(function(ctx) {
+        document.getElementById('context').textContent = 'Sheet: ' + ctx.spreadsheetName + ' | Range: ' + (ctx.activeRangeA1 || 'N/A');
+      }).getActiveSpreadsheetContext();
+    </script>
+  </body>
+</html>
