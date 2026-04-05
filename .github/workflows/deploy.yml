@@ -58,7 +58,7 @@ jobs:
       - name: Capture previous version
         id: previous
         run: |
-          PREVIOUS=$(gcloud app versions list --service=default --sort-by="~version.createTime" --format="value(id)" --limit=1)
+          PREVIOUS=$(gcloud app versions list --service=default --sort-by="~version.createTime" --format="value(id)" --limit=1 2>/dev/null || true)
           echo "version=${PREVIOUS}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy App Engine
