@@ -42,17 +42,36 @@ function errorText(err) {
   return String(err) + requestRef + attemptDetails;
 }
 
+function summarizeScope(scope = '') {
+  const parts = [];
+  if (scope.includes('spreadsheets')) parts.push('Sheets');
+  if (scope.includes('drive.file')) parts.push('Drive files');
+  if (scope.includes('drive.appdata')) parts.push('Drive app data');
+  return parts.join(', ');
+}
+
 function syncUi(state) {
   const signedIn = Boolean(state.accessToken);
   const driveEnabled = hasDriveScope(state.oauthScope);
   const embedded = document.body.dataset.embedded === 'true';
+  const authSummary = signedIn
+    ? `Signed in${state.oauthScope ? ` • ${summarizeScope(state.oauthScope)}` : ''}`
+    : 'Not signed in';
+  const sheetSummary = state.sheetData.length > 0
+    ? `${Math.max(state.sheetData.length - 1, 0)} rows loaded`
+    : 'No sheet data';
+  const driveSummary = driveEnabled ? 'Drive save enabled' : 'Drive not enabled';
 
-  setText('auth-status', signedIn ? `Signed in. Scope: ${state.oauthScope}` : 'Not signed in.');
+  setText('auth-status', authSummary);
   setText('session-status', state.activeSessionId ? `Session ${state.activeSessionId} v${state.latestSessionVersion}` : 'No saved Drive session yet.');
+  setText('auth-pill', authSummary);
+  setText('sheet-pill', sheetSummary);
+  setText('drive-pill', driveSummary);
   setDisabled('sign-in-btn', signedIn);
   setDisabled('sign-in-drive-btn', !signedIn || driveEnabled);
   setDisabled('sign-out-btn', !signedIn);
   setDisabled('load-sheet-btn', !signedIn);
+  setDisabled('load-sheet-btn-embedded', !signedIn || !embedded);
   setDisabled('analyze-btn', !signedIn || state.sheetData.length === 0 || state.appState === APP_STATES.ANALYZING);
   setDisabled('save-drive-btn', !signedIn || !state.result || !driveEnabled);
   setDisabled('list-drive-btn', !signedIn || !driveEnabled);
@@ -115,6 +134,12 @@ async function init() {
     (context) => {
       syncSheetInputsFromState();
       setText(
+        'host-summary',
+        context
+          ? `${context.spreadsheetName} • ${context.activeSheetName} • ${context.activeRangeA1 || 'No selection'}`
+          : 'No sidebar context available.',
+      );
+      setText(
         'host-output',
         context
           ? `Connected to ${context.spreadsheetName} | ${context.activeSheetName} | ${context.activeRangeA1 || 'No range'}`
@@ -148,11 +173,14 @@ async function init() {
   document.getElementById('sign-in-drive-btn').addEventListener('click', () => auth.requestDriveScope());
   document.getElementById('sign-out-btn').addEventListener('click', () => auth.signOut());
 
-  document.getElementById('sync-sidebar-btn').addEventListener('click', () => {
+  const requestHostSheet = () => {
     sidebarBridge.requestContext();
     sidebarBridge.requestSheetData();
     setText('host-output', 'Requested fresh sheet context from sidebar host.');
-  });
+  };
+
+  document.getElementById('sync-sidebar-btn').addEventListener('click', requestHostSheet);
+  document.getElementById('load-sheet-btn-embedded').addEventListener('click', requestHostSheet);
 
   document.getElementById('insert-result-btn').addEventListener('click', () => {
     if (!store.state.result) return;
@@ -194,12 +222,16 @@ async function init() {
       store.state.appState = APP_STATES.DATA_LOADED;
       setText('results-output', JSON.stringify(result, null, 2));
 
-      await appendSheet(
-        store.state.spreadsheetId,
-        'AI Logs!A1',
-        [[new Date().toISOString(), result.provider || providerName, task, result.model || '', 'ok']],
-        store.state.accessToken,
-      );
+      try {
+        await appendSheet(
+          store.state.spreadsheetId,
+          "'AI Logs'!A1",
+          [[new Date().toISOString(), result.provider || providerName, task, result.model || '', 'ok']],
+          store.state.accessToken,
+        );
+      } catch {
+        // Analysis should still succeed if the optional log sheet write fails.
+      }
     } catch (err) {
       store.state.appState = APP_STATES.ERROR;
       setText('results-output', errorText(err));

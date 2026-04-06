@@ -10,19 +10,29 @@
   </head>
   <body>
     <main class="container">
-      <h1>Google Sheets + Multi-AI (Kimi-first)</h1>
-      <p class="hint">Can run standalone or in Google Sheets sidebar via Apps Script wrapper.</p>
+      <header class="hero">
+        <div>
+          <h1>Sheets AI Assistant</h1>
+        </div>
+        <div class="status-grid">
+          <div class="status-pill" id="auth-pill">Not signed in</div>
+          <div class="status-pill" id="sheet-pill">No sheet data</div>
+          <div class="status-pill" id="drive-pill">Drive not enabled</div>
+        </div>
+      </header>
 
       <section class="panel" id="auth-panel">
-        <h2>1) Google Authentication</h2>
+        <h2>Google Access</h2>
         <p id="auth-status">Not signed in.</p>
-        <button id="sign-in-btn">Sign in with Google</button>
-        <button id="sign-in-drive-btn" disabled>Enable Drive Save (extra scope)</button>
-        <button id="sign-out-btn" disabled>Sign out</button>
+        <div class="button-row">
+          <button id="sign-in-btn">Sign in with Google</button>
+          <button id="sign-in-drive-btn" disabled>Enable Drive Save</button>
+          <button id="sign-out-btn" disabled>Sign out</button>
+        </div>
       </section>
 
-      <section class="panel" id="sheet-panel">
-        <h2>2) Connect Sheet</h2>
+      <section class="panel standalone-only" id="sheet-panel">
+        <h2>Sheet</h2>
         <label>Spreadsheet ID or URL</label>
         <input id="spreadsheet-input" placeholder="https://docs.google.com/spreadsheets/d/..." />
         <label>Range (A1 notation)</label>
@@ -31,15 +41,18 @@
       </section>
 
       <section class="panel" id="host-panel">
-        <h2>3) Sidebar Host Bridge</h2>
-        <p class="hint">When opened from Apps Script, the app can sync the active range and send commands back to the host sheet.</p>
-        <button id="sync-sidebar-btn">Sync Sidebar Context</button>
-        <button id="insert-result-btn">Insert Current Result into Sheet</button>
+        <h2>Sheet</h2>
+        <div class="meta-card" id="host-summary">Waiting for sheet context.</div>
+        <div class="button-row">
+          <button id="sync-sidebar-btn">Refresh Context</button>
+          <button id="load-sheet-btn-embedded">Load Current Sheet</button>
+          <button id="insert-result-btn">Insert Result</button>
+        </div>
         <pre id="host-output">Standalone mode.</pre>
       </section>
 
       <section class="panel" id="analysis-panel">
-        <h2>4) Analyze</h2>
+        <h2>Analyze</h2>
         <label>Provider</label>
         <select id="provider-select">
           <option value="kimi">Kimi (primary)</option>
@@ -51,14 +64,16 @@
           <option value="find anomalies">Find anomalies</option>
           <option value="categorize rows">Categorize rows</option>
         </select>
-        <button id="analyze-btn" disabled>Run Analysis (fallback enabled)</button>
+        <button id="analyze-btn" disabled>Run Analysis</button>
       </section>
 
       <section class="panel" id="drive-panel">
-        <h2>5) Save / Load from Drive</h2>
+        <h2>Drive</h2>
         <p id="session-status">No saved Drive session yet.</p>
-        <button id="save-drive-btn" disabled>Save Current Result to Drive</button>
-        <button id="list-drive-btn" disabled>List Saved Sessions</button>
+        <div class="button-row">
+          <button id="save-drive-btn" disabled>Save to Drive</button>
+          <button id="list-drive-btn" disabled>List Sessions</button>
+        </div>
         <label>Restore by Session ID</label>
         <input id="restore-session-id" placeholder="Optional session id" />
         <label>Restore Version</label>
@@ -70,7 +85,7 @@
       </section>
 
       <section class="panel" id="results-panel">
-        <h2>6) Results</h2>
+        <h2>Result</h2>
         <pre id="results-output">No results yet.</pre>
       </section>
     </main>
