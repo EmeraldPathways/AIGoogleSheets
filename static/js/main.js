@@ -80,6 +80,13 @@ function suggestedTaskText(state) {
 
 function formatResult(result) {
   if (result == null) return 'No results yet.';
+  if (typeof result === 'string') return result;
+  if (typeof result?.displayText === 'string' && result.displayText.trim()) {
+    return result.displayText.trim();
+  }
+  if (typeof result?.content === 'string' && result.content.trim()) {
+    return result.content.trim();
+  }
   try {
     return JSON.stringify(result, null, 2);
   } catch {
@@ -327,10 +334,11 @@ async function init() {
       const providerName = getValue('provider-select');
       const task = getValue('task-select') || 'summarize';
       const result = await analyzeWithFallback(store.state.sheetData, task, providerName, cfg.retryPolicy || {});
+      result.displayText = formatResult(result);
 
       store.state.result = result;
       store.state.appState = APP_STATES.DATA_LOADED;
-      setText('results-output', formatResult(result));
+      setText('results-output', result.displayText);
 
       try {
         await appendSheet(

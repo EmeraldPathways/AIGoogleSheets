@@ -61,7 +61,17 @@ function insertAnalysisResult(payload) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getActiveSheet();
   var targetRange = payload && payload.range ? payload.range : 'A1';
-  var resultText = JSON.stringify((payload && payload.result) || {}, null, 2);
+  var result = payload && payload.result ? payload.result : {};
+  var resultText = '';
+
+  if (result && typeof result.displayText === 'string' && result.displayText.trim()) {
+    resultText = result.displayText.trim();
+  } else if (result && typeof result.content === 'string' && result.content.trim()) {
+    resultText = result.content.trim();
+  } else {
+    resultText = JSON.stringify(result || {}, null, 2);
+  }
+
   sheet.getRange(targetRange).setValue(resultText);
   return {
     ok: true,

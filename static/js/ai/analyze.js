@@ -1,16 +1,10 @@
 import { fetchJson } from '../api.js';
 
-function parseStructuredContent(content) {
-  if (typeof content !== 'string') return content;
-
-  const trimmed = content.trim();
-  if (!trimmed) return content;
-
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return content;
+function normalizeContent(content) {
+  if (typeof content !== 'string') {
+    return content == null ? '' : String(content);
   }
+  return content.trim();
 }
 
 export async function analyzeWithFallback(sheetData, task, preferredProvider = 'kimi', retryPolicy = {}) {
@@ -18,11 +12,13 @@ export async function analyzeWithFallback(sheetData, task, preferredProvider = '
   const aiPayload = {
     model: isOpenAI ? 'gpt-4o-mini' : 'kimi-k2-turbo-preview',
     messages: [
-      { role: 'system', content: `You are analyzing spreadsheet data. Task: ${task}. Return JSON.` },
+      {
+        role: 'system',
+        content: `You analyze spreadsheet data. Task: ${task}. Return only a concise plain-text report with short headings and bullet points. Do not return JSON, markdown code fences, or explanatory preamble.`,
+      },
       { role: 'user', content: JSON.stringify(sheetData) },
     ],
     temperature: isOpenAI ? 0.3 : 0.3,
-    response_format: { type: 'json_object' },
   };
 
   const providerOrder = preferredProvider === 'openai' ? ['openai', 'kimi'] : ['kimi', 'openai'];
@@ -46,7 +42,7 @@ export async function analyzeWithFallback(sheetData, task, preferredProvider = '
     provider: data.provider,
     model: data.model,
     usage: data.usage,
-    content: parseStructuredContent(rawContent),
+    content: normalizeContent(rawContent),
     rawContent,
   };
 }
