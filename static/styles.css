@@ -71,6 +71,37 @@ body {
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
 }
 
+.host-details {
+  margin-top: 0.8rem;
+}
+
+.host-details summary {
+  cursor: pointer;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.84rem;
+  list-style: none;
+}
+
+.host-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.host-details summary::after {
+  content: "Show";
+  float: right;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.host-details[open] summary::after {
+  content: "Hide";
+}
+
+.embedded-only-collapsed {
+  display: block;
+}
+
 h1, h2 {
   margin-top: 0;
 }
@@ -147,6 +178,9 @@ body[data-embedded="true"] .container {
   margin: 0;
   max-width: none;
   padding: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 body[data-embedded="true"] .hero {
@@ -172,11 +206,36 @@ body[data-embedded="true"] .panel {
   border-radius: 14px;
 }
 
+body[data-embedded="true"] #auth-panel,
+body[data-embedded="true"] #drive-panel {
+  display: none;
+}
+
+body[data-embedded="true"] #host-panel {
+  order: 1;
+}
+
+body[data-embedded="true"] #analysis-panel {
+  order: 2;
+}
+
+body[data-embedded="true"] #results-panel {
+  order: 3;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
 body[data-embedded="true"] #host-output,
 body[data-embedded="true"] #drive-output,
 body[data-embedded="true"] #results-output {
-  max-height: 220px;
+  max-height: none;
   overflow: auto;
+}
+
+body[data-embedded="true"] #results-output {
+  flex: 1 1 auto;
+  min-height: 220px;
 }
 
 body[data-embedded="true"] #auth-status,
@@ -214,6 +273,10 @@ body[data-embedded="true"] .meta-card {
 body[data-embedded="true"] .hint {
   font-size: 0.8rem;
   margin-bottom: 0.55rem;
+}
+
+body[data-embedded="true"] .host-details {
+  margin-top: 0.55rem;
 }
 
 @media (max-width: 720px) {

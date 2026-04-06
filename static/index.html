@@ -10,7 +10,7 @@
   </head>
   <body>
     <main class="container">
-      <header class="hero">
+      <header class="hero standalone-only">
         <div>
           <h1>Sheets AI Assistant</h1>
         </div>
@@ -43,16 +43,19 @@
       <section class="panel" id="host-panel">
         <h2>Sheet</h2>
         <div class="meta-card" id="host-summary">Waiting for sheet context.</div>
-        <div class="status-grid compact-status-grid">
-          <div class="status-pill" id="host-bridge-pill">Host bridge: waiting</div>
-          <div class="status-pill" id="host-rows-pill">Rows: 0</div>
-        </div>
         <div class="button-row">
           <button id="sync-sidebar-btn">Refresh Context</button>
           <button id="load-sheet-btn-embedded">Load Current Sheet</button>
           <button id="insert-result-btn">Insert Result</button>
         </div>
-        <pre id="host-output">Standalone mode.</pre>
+        <details class="host-details">
+          <summary>Connection Details</summary>
+          <div class="status-grid compact-status-grid">
+            <div class="status-pill" id="host-bridge-pill">Host bridge: waiting</div>
+            <div class="status-pill" id="host-rows-pill">Rows: 0</div>
+          </div>
+          <pre id="host-output">Standalone mode.</pre>
+        </details>
       </section>
 
       <section class="panel" id="analysis-panel">
@@ -72,7 +75,7 @@
         <button id="analyze-btn" disabled>Run Analysis</button>
       </section>
 
-      <section class="panel" id="drive-panel">
+      <section class="panel embedded-only-collapsed" id="drive-panel">
         <h2>Drive</h2>
         <p id="session-status">No saved Drive session yet.</p>
         <div class="button-row">
