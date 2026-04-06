@@ -95,24 +95,38 @@
       }
 
       function pushContext() {
-        google.script.run.withSuccessHandler(function(ctx) {
-          document.getElementById('context').textContent =
-            'Sheet: ' + ctx.spreadsheetName + ' | Active: ' + (ctx.activeRangeA1 || 'N/A') +
-            ' | Data: ' + (ctx.dataRangeA1 || 'N/A');
-          postToFrame({ source: 'apps-script-sidebar', type: 'HOST_CONTEXT', context: ctx });
-        }).getActiveSpreadsheetContext();
+        google.script.run
+          .withSuccessHandler(function(ctx) {
+            document.getElementById('context').textContent =
+              'Sheet: ' + ctx.spreadsheetName + ' | Active: ' + (ctx.activeRangeA1 || 'N/A') +
+              ' | Data: ' + (ctx.dataRangeA1 || 'N/A');
+            postToFrame({ source: 'apps-script-sidebar', type: 'HOST_CONTEXT', context: ctx });
+          })
+          .withFailureHandler(function(error) {
+            var message = error && error.message ? error.message : String(error);
+            document.getElementById('context').textContent = 'Context error: ' + message;
+            postToFrame({ source: 'apps-script-sidebar', type: 'HOST_ERROR', stage: 'context', message: message });
+          })
+          .getActiveSpreadsheetContext();
       }
 
       function pushSheetData() {
-        google.script.run.withSuccessHandler(function(payload) {
-          payload = payload || {};
-          payload.values = normalizeValues(payload.values);
-          document.getElementById('context').textContent =
-            'Sheet: ' + (payload.spreadsheetName || 'Unknown') +
-            ' | Active: ' + ((payload.range || '').split('!')[1] || 'N/A') +
-            ' | Rows: ' + Math.max((payload.values || []).length - 1, 0);
-          postToFrame({ source: 'apps-script-sidebar', type: 'HOST_SHEET_DATA', payload: payload });
-        }).getActiveSheetPayload();
+        google.script.run
+          .withSuccessHandler(function(payload) {
+            payload = payload || {};
+            payload.values = normalizeValues(payload.values);
+            document.getElementById('context').textContent =
+              'Sheet: ' + (payload.spreadsheetName || 'Unknown') +
+              ' | Active: ' + ((payload.range || '').split('!')[1] || 'N/A') +
+              ' | Rows: ' + Math.max((payload.values || []).length - 1, 0);
+            postToFrame({ source: 'apps-script-sidebar', type: 'HOST_SHEET_DATA', payload: payload });
+          })
+          .withFailureHandler(function(error) {
+            var message = error && error.message ? error.message : String(error);
+            document.getElementById('context').textContent = 'Sheet data error: ' + message;
+            postToFrame({ source: 'apps-script-sidebar', type: 'HOST_ERROR', stage: 'sheet_data', message: message });
+          })
+          .getActiveSheetPayload();
       }
 
       window.addEventListener('message', function(event) {

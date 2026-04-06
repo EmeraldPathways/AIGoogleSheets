@@ -1,6 +1,6 @@
 import { postEvent } from './api.js';
 
-export function createSidebarBridge(store, onRestoreSession, onHostContext, onHostSheetData) {
+export function createSidebarBridge(store, onRestoreSession, onHostContext, onHostSheetData, onHostError) {
   let hostContext = null;
 
   function qualifyRange(sheetName, a1Range) {
@@ -49,6 +49,10 @@ export function createSidebarBridge(store, onRestoreSession, onHostContext, onHo
 
       if (data.type === 'RESTORED_SESSION' && data.session) {
         onRestoreSession(data.session);
+      }
+
+      if (data.type === 'HOST_ERROR') {
+        if (onHostError) onHostError(data);
       }
     });
 

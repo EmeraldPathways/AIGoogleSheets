@@ -1,5 +1,18 @@
 import { fetchJson } from '../api.js';
 
+function parseStructuredContent(content) {
+  if (typeof content !== 'string') return content;
+
+  const trimmed = content.trim();
+  if (!trimmed) return content;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return content;
+  }
+}
+
 export async function analyzeWithFallback(sheetData, task, preferredProvider = 'kimi', retryPolicy = {}) {
   const isOpenAI = preferredProvider === 'openai';
   const aiPayload = {
@@ -27,10 +40,13 @@ export async function analyzeWithFallback(sheetData, task, preferredProvider = '
     },
   );
 
+  const rawContent = data?.choices?.[0]?.message?.content ?? '';
+
   return {
     provider: data.provider,
     model: data.model,
     usage: data.usage,
-    content: data?.choices?.[0]?.message?.content ?? '',
+    content: parseStructuredContent(rawContent),
+    rawContent,
   };
 }

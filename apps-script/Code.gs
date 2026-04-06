@@ -37,12 +37,23 @@ function getActiveSheetPayload() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getActiveSheet();
   var dataRange = sheet.getDataRange();
+  var values = dataRange.getValues().map(function(row) {
+    return row.map(function(cell) {
+      if (cell instanceof Date) {
+        return cell.toISOString();
+      }
+      if (cell === null || cell === undefined) {
+        return '';
+      }
+      return cell;
+    });
+  });
   return {
     spreadsheetId: ss.getId(),
     spreadsheetName: ss.getName(),
     activeSheetName: sheet.getName(),
     range: "'" + sheet.getName().replace(/'/g, "''") + "'!" + dataRange.getA1Notation(),
-    values: dataRange.getValues(),
+    values: values,
   };
 }
 

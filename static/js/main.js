@@ -78,6 +78,15 @@ function suggestedTaskText(state) {
   return 'Suggestion: load host sheet data, then analyze the active selection.';
 }
 
+function formatResult(result) {
+  if (result == null) return 'No results yet.';
+  try {
+    return JSON.stringify(result, null, 2);
+  } catch {
+    return String(result);
+  }
+}
+
 async function loadSheetDataIntoStore(spreadsheetId, range, accessToken, sourceLabel = 'sheet') {
   const values = await readSheet(spreadsheetId, range, accessToken);
   store.state.sheetData = values;
@@ -106,10 +115,14 @@ function syncUi(state) {
     ? 'Host bridge: standalone'
     : state.hostConnected
       ? 'Host bridge: connected'
-      : 'Host bridge: waiting';
+      : state.hostLastEvent && state.hostLastEvent !== 'Waiting for sidebar host.'
+        ? 'Host bridge: issue'
+        : 'Host bridge: waiting';
   const hostRowsSummary = state.hostRowsReceived
     ? `Rows: ${Math.max(state.sheetData.length - 1, 0)}`
-    : 'Rows: waiting';
+    : state.hostConnected
+      ? 'Rows: pending'
+      : 'Rows: waiting';
 
   setText('auth-status', authSummary);
   setText('session-status', state.activeSessionId ? `Session ${state.activeSessionId} v${state.latestSessionVersion}` : 'No saved Drive session yet.');
@@ -152,7 +165,7 @@ function restoreSessionIntoStore(session) {
   store.state.result = session.result || null;
   store.state.sheetData = session.sheetData || store.state.sheetData;
   if (session.result) {
-    setText('results-output', JSON.stringify(session.result, null, 2));
+    setText('results-output', formatResult(session.result));
   }
   if (session.range) {
     const rangeInput = document.getElementById('range-input');
@@ -224,6 +237,18 @@ async function init() {
         setText('results-output', `Loaded ${Math.max(store.state.sheetData.length - 1, 0)} data rows from current sheet.`);
       }
       syncSheetInputsFromState();
+      setText(
+        'host-output',
+        `${store.state.hostContextSummary || 'Connected to sidebar host.'}\n${store.state.hostLastEvent}`,
+      );
+      syncUi(store.state);
+    },
+    (hostError) => {
+      const stage = hostError?.stage ? ` (${hostError.stage})` : '';
+      const message = hostError?.message || 'Unknown Apps Script host error.';
+      store.state.hostConnected = true;
+      store.state.hostRowsReceived = false;
+      store.state.hostLastEvent = `Host error${stage}: ${message}`;
       setText(
         'host-output',
         `${store.state.hostContextSummary || 'Connected to sidebar host.'}\n${store.state.hostLastEvent}`,
@@ -305,7 +330,7 @@ async function init() {
 
       store.state.result = result;
       store.state.appState = APP_STATES.DATA_LOADED;
-      setText('results-output', JSON.stringify(result, null, 2));
+      setText('results-output', formatResult(result));
 
       try {
         await appendSheet(
