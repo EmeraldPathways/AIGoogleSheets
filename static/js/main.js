@@ -78,10 +78,24 @@ function restoreSessionIntoStore(session) {
   }
 }
 
+function syncSheetInputsFromState() {
+  const spreadsheetInput = document.getElementById('spreadsheet-input');
+  const rangeInput = document.getElementById('range-input');
+
+  if (spreadsheetInput && store.state.spreadsheetId) {
+    spreadsheetInput.value = store.state.spreadsheetId;
+  }
+
+  if (rangeInput && store.state.range) {
+    rangeInput.value = store.state.range;
+  }
+}
+
 async function init() {
   const cfg = await loadServerConfig();
   store.state.config = cfg;
   const sidebarBridge = createSidebarBridge(store, restoreSessionIntoStore, (context) => {
+    syncSheetInputsFromState();
     setText(
       'host-output',
       context
@@ -99,6 +113,7 @@ async function init() {
 
   auth.init();
   sidebarBridge.init();
+  syncSheetInputsFromState();
 
   document.getElementById('sign-in-btn').addEventListener('click', () => auth.signIn());
   document.getElementById('sign-in-drive-btn').addEventListener('click', () => auth.requestDriveScope());

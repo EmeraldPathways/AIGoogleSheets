@@ -2,6 +2,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('AI Assistant')
     .addItem('Open Sidebar', 'showSidebar')
+    .addItem('Open Wide Dialog', 'showWideDialog')
     .addToUi();
 }
 
@@ -9,6 +10,13 @@ function showSidebar() {
   var html = HtmlService.createHtmlOutputFromFile('Sidebar')
     .setTitle('Sheets AI Assistant');
   SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function showWideDialog() {
+  var html = HtmlService.createHtmlOutputFromFile('Sidebar')
+    .setWidth(1100)
+    .setHeight(820);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Sheets AI Assistant');
 }
 
 function getActiveSpreadsheetContext() {
