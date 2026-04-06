@@ -79,6 +79,23 @@ def test_ai_fallback_returns_second_provider(monkeypatch):
     assert resp.get_json()['provider'] == 'openai'
 
 
+def test_terminal_quota_response_is_not_retried():
+    response = Mock()
+    response.status_code = 429
+    response.json.return_value = {
+        'error': {
+            'message': 'You exceeded your current quota, please check your plan and billing details.',
+            'code': 'insufficient_quota',
+        }
+    }
+
+    with patch.object(app_module.requests, 'request', return_value=response) as request_mock:
+        result = app_module._request_with_retry('POST', 'https://example.com', operation='ai_openai')
+
+    assert result is response
+    assert request_mock.call_count == 1
+
+
 def test_drive_requires_auth():
     client = app_module.app.test_client()
     resp = client.get('/api/drive/list')

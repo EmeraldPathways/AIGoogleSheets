@@ -272,6 +272,43 @@ def _parse_json_response(upstream: Any) -> dict:
         return {"raw": upstream.text[:1000]}
 
 
+def _error_text_from_payload(payload: dict) -> str:
+    error = payload.get("error")
+    if isinstance(error, dict):
+        message = str(error.get("message", "")).strip()
+        code = str(error.get("code", "")).strip()
+        err_type = str(error.get("type", "")).strip()
+        parts = [part for part in [message, code or err_type] if part]
+        if parts:
+            return " | ".join(parts)
+    message = str(payload.get("message", "")).strip()
+    if message:
+        return message
+    return ""
+
+
+def _is_terminal_upstream_response(response: Any) -> bool:
+    if response.status_code not in {403, 429}:
+        return False
+
+    payload = _parse_json_response(response)
+    haystack = " ".join(
+        [
+            _error_text_from_payload(payload).lower(),
+            str(payload).lower(),
+        ]
+    )
+    terminal_markers = (
+        "insufficient_quota",
+        "exceeded_current_quota_error",
+        "insufficient balance",
+        "billing",
+        "suspended",
+        "quota",
+    )
+    return any(marker in haystack for marker in terminal_markers)
+
+
 def _request_with_retry(method: str, url: str, *, operation: str, retryable_statuses: set[int] | None = None, **kwargs):
     retryable_statuses = retryable_statuses or UPSTREAM_RETRYABLE_STATUSES
     last_response = None
@@ -291,7 +328,11 @@ def _request_with_retry(method: str, url: str, *, operation: str, retryable_stat
                 status=response.status_code,
                 durationMs=latency_ms,
             )
-            if response.status_code not in retryable_statuses or attempt == UPSTREAM_MAX_ATTEMPTS:
+            if (
+                response.status_code not in retryable_statuses
+                or attempt == UPSTREAM_MAX_ATTEMPTS
+                or _is_terminal_upstream_response(response)
+            ):
                 return response
         except requests.exceptions.RequestException as err:
             last_error = err

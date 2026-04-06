@@ -24,15 +24,22 @@ const store = createStore({
 
 function errorText(err) {
   const requestRef = err?.requestId ? ` | requestId=${err.requestId}` : '';
-  if (err?.message) return String(err.message) + requestRef;
+  const attemptDetails = Array.isArray(err?.details?.attempts) && err.details.attempts.length
+    ? ` | ${err.details.attempts.map((attempt) => {
+      const status = attempt.status ? ` ${attempt.status}` : '';
+      const message = attempt.message ? ` ${attempt.message}` : '';
+      return `${attempt.provider}:${status}${message}`.trim();
+    }).join(' ; ')}`
+    : '';
+  if (err?.message) return String(err.message) + requestRef + attemptDetails;
   if (typeof err === 'object') {
     try {
-      return JSON.stringify(err) + requestRef;
+      return JSON.stringify(err) + requestRef + attemptDetails;
     } catch {
-      return '[unserializable error object]' + requestRef;
+      return '[unserializable error object]' + requestRef + attemptDetails;
     }
   }
-  return String(err) + requestRef;
+  return String(err) + requestRef + attemptDetails;
 }
 
 function syncUi(state) {
