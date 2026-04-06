@@ -1,13 +1,14 @@
 import { fetchJson } from '../api.js';
 
 export async function analyzeWithFallback(sheetData, task, preferredProvider = 'kimi', retryPolicy = {}) {
+  const isOpenAI = preferredProvider === 'openai';
   const aiPayload = {
-    model: preferredProvider === 'openai' ? 'gpt-4o-mini' : 'kimi-k2-5',
+    model: isOpenAI ? 'gpt-4o-mini' : 'kimi-k2.5',
     messages: [
       { role: 'system', content: `You are analyzing spreadsheet data. Task: ${task}. Return JSON.` },
       { role: 'user', content: JSON.stringify(sheetData) },
     ],
-    temperature: 0.3,
+    temperature: isOpenAI ? 0.3 : 1,
     response_format: { type: 'json_object' },
   };
 

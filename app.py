@@ -462,7 +462,8 @@ def _ai_cost_estimate(model: str, usage: dict | None) -> float:
     output_tokens = usage.get("completion_tokens", 0) or usage.get("output_tokens", 0) or 0
     pricing = {
         "gpt-4.1-mini": (0.40, 1.60),
-        "kimi-k2-5": (0.15, 0.60),
+        "gpt-4o-mini": (0.15, 0.60),
+        "kimi-k2.5": (0.15, 0.60),
     }
     input_rate, output_rate = pricing.get(model, (0.0, 0.0))
     return round(((input_tokens / 1_000_000) * input_rate) + ((output_tokens / 1_000_000) * output_rate), 6)
