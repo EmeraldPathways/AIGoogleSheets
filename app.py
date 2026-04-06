@@ -27,6 +27,7 @@ DRIVE_UPLOAD_ENDPOINT = "https://www.googleapis.com/upload/drive/v3/files?upload
 DRIVE_LIST_ENDPOINT = "https://www.googleapis.com/drive/v3/files"
 GOOGLE_TOKENINFO_ENDPOINT = "https://oauth2.googleapis.com/tokeninfo"
 GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+GOOGLE_DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
 GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 SESSION_SCHEMA_VERSION = 2
 OBSERVABILITY_HISTORY_LIMIT = int(os.getenv("OBSERVABILITY_HISTORY_LIMIT", "100"))
@@ -583,7 +584,7 @@ def config():
             "environment": APP_ENV,
             "scopes": {
                 "base": GOOGLE_SHEETS_SCOPE,
-                "drive": GOOGLE_DRIVE_SCOPE,
+                "drive": f"{GOOGLE_DRIVE_SCOPE} {GOOGLE_DRIVE_APPDATA_SCOPE}",
             },
             "rateLimit": {
                 "windowSeconds": RATE_LIMIT_WINDOW_SECONDS,
@@ -757,7 +758,7 @@ def analyze_with_fallback():
 
 
 @app.route("/api/drive/save", methods=["POST"])
-@require_google_access_token(required_scopes=[GOOGLE_DRIVE_SCOPE])
+@require_google_access_token(required_scopes=[GOOGLE_DRIVE_SCOPE, GOOGLE_DRIVE_APPDATA_SCOPE])
 def drive_save():
     invalid = _require_json()
     if invalid:
@@ -844,7 +845,7 @@ def drive_save():
 
 
 @app.route("/api/drive/list", methods=["GET"])
-@require_google_access_token(required_scopes=[GOOGLE_DRIVE_SCOPE])
+@require_google_access_token(required_scopes=[GOOGLE_DRIVE_SCOPE, GOOGLE_DRIVE_APPDATA_SCOPE])
 def drive_list():
     token = request.google_token
     page_size = min(int(request.args.get("pageSize", "25")), 100)
@@ -884,7 +885,7 @@ def drive_list():
 
 
 @app.route("/api/drive/restore", methods=["GET"])
-@require_google_access_token(required_scopes=[GOOGLE_DRIVE_SCOPE])
+@require_google_access_token(required_scopes=[GOOGLE_DRIVE_SCOPE, GOOGLE_DRIVE_APPDATA_SCOPE])
 def drive_restore():
     token = request.google_token
     file_id = request.args.get("fileId", "").strip()
