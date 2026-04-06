@@ -1,6 +1,6 @@
 runtime: python312
 
-entrypoint: gunicorn -b :$PORT app:app
+entrypoint: gunicorn --timeout 120 -b :$PORT app:app
 
 env_variables:
   APP_ENV: "production"
