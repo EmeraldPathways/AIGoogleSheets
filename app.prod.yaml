@@ -15,6 +15,7 @@ env_variables:
   UPSTREAM_MAX_ATTEMPTS: "3"
   UPSTREAM_RETRY_BASE_DELAY_MS: "250"
   EMBED_ALLOWED_PARENTS: "https://script.google.com https://script.googleusercontent.com"
+  KIMI_API_ENDPOINT: "https://api.moonshot.ai/v1/chat/completions"
   KIMI_API_KEY_SECRET_RESOURCE: "projects/243073050765/secrets/kimi-api-key/versions/latest"
   OPENAI_API_KEY_SECRET_RESOURCE: "projects/243073050765/secrets/openai-api-key/versions/latest"
 

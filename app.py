@@ -21,7 +21,7 @@ except ImportError:
     secretmanager = None
 
 
-KIMI_ENDPOINT = os.getenv("KIMI_API_ENDPOINT", "https://api.moonshot.cn/v1/chat/completions")
+KIMI_ENDPOINT = os.getenv("KIMI_API_ENDPOINT", "https://api.moonshot.ai/v1/chat/completions")
 OPENAI_ENDPOINT = os.getenv("OPENAI_API_ENDPOINT", "https://api.openai.com/v1/chat/completions")
 DRIVE_UPLOAD_ENDPOINT = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
 DRIVE_LIST_ENDPOINT = "https://www.googleapis.com/drive/v3/files"
