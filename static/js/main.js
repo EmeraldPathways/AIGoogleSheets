@@ -50,12 +50,21 @@ function summarizeScope(scope = '') {
   return parts.join(', ');
 }
 
+async function loadSheetDataIntoStore(spreadsheetId, range, accessToken, sourceLabel = 'sheet') {
+  const values = await readSheet(spreadsheetId, range, accessToken);
+  store.state.sheetData = values;
+  store.state.spreadsheetId = spreadsheetId;
+  store.state.range = range;
+  store.state.appState = APP_STATES.DATA_LOADED;
+  setText('results-output', `Loaded ${Math.max(values.length - 1, 0)} data rows from ${sourceLabel}.`);
+}
+
 function syncUi(state) {
   const signedIn = Boolean(state.accessToken);
   const driveEnabled = hasDriveScope(state.oauthScope);
   const embedded = document.body.dataset.embedded === 'true';
   const authSummary = signedIn
-    ? `Signed in${state.oauthScope ? ` • ${summarizeScope(state.oauthScope)}` : ''}`
+    ? `Signed in${state.oauthScope ? ` | ${summarizeScope(state.oauthScope)}` : ''}`
     : 'Not signed in';
   const sheetSummary = state.sheetData.length > 0
     ? `${Math.max(state.sheetData.length - 1, 0)} rows loaded`
@@ -136,7 +145,7 @@ async function init() {
       setText(
         'host-summary',
         context
-          ? `${context.spreadsheetName} • ${context.activeSheetName} • ${context.activeRangeA1 || 'No selection'}`
+          ? `${context.spreadsheetName} | ${context.activeSheetName} | ${context.activeRangeA1 || 'No selection'}`
           : 'No sidebar context available.',
       );
       setText(
@@ -180,7 +189,21 @@ async function init() {
   };
 
   document.getElementById('sync-sidebar-btn').addEventListener('click', requestHostSheet);
-  document.getElementById('load-sheet-btn-embedded').addEventListener('click', requestHostSheet);
+  document.getElementById('load-sheet-btn-embedded').addEventListener('click', async () => {
+    try {
+      setText('results-output', 'Loading current sheet...');
+      requestHostSheet();
+
+      const spreadsheetId = store.state.spreadsheetId;
+      const range = store.state.range || 'Sheet1!A1:Z200';
+      if (!spreadsheetId) return;
+
+      await loadSheetDataIntoStore(spreadsheetId, range, store.state.accessToken, 'current sheet');
+    } catch (err) {
+      store.state.appState = APP_STATES.ERROR;
+      setText('results-output', errorText(err));
+    }
+  });
 
   document.getElementById('insert-result-btn').addEventListener('click', () => {
     if (!store.state.result) return;
@@ -197,12 +220,7 @@ async function init() {
       if (!spreadsheetId) throw new Error('Invalid spreadsheet ID or URL.');
 
       const range = getValue('range-input') || store.state.range || 'Sheet1!A1:Z200';
-      const values = await readSheet(spreadsheetId, range, store.state.accessToken);
-      store.state.sheetData = values;
-      store.state.spreadsheetId = spreadsheetId;
-      store.state.range = range;
-      store.state.appState = APP_STATES.DATA_LOADED;
-      setText('results-output', `Loaded ${Math.max(values.length - 1, 0)} data rows.`);
+      await loadSheetDataIntoStore(spreadsheetId, range, store.state.accessToken);
     } catch (err) {
       store.state.appState = APP_STATES.ERROR;
       setText('results-output', errorText(err));
