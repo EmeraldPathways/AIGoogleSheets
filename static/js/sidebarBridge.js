@@ -3,6 +3,12 @@ import { postEvent } from './api.js';
 export function createSidebarBridge(store, onRestoreSession, onHostContext) {
   let hostContext = null;
 
+  function qualifyRange(sheetName, a1Range) {
+    if (!sheetName || !a1Range) return a1Range || '';
+    const escapedSheetName = sheetName.replace(/'/g, "''");
+    return `'${escapedSheetName}'!${a1Range}`;
+  }
+
   function isEmbedded() {
     return window.self !== window.top;
   }
@@ -15,9 +21,7 @@ export function createSidebarBridge(store, onRestoreSession, onHostContext) {
       store.state.spreadsheetId = hostContext.spreadsheetId;
     }
     if (hostContext.activeRangeA1) {
-      store.state.range = hostContext.activeSheetName
-        ? `${hostContext.activeSheetName}!${hostContext.activeRangeA1}`
-        : hostContext.activeRangeA1;
+      store.state.range = qualifyRange(hostContext.activeSheetName, hostContext.activeRangeA1);
     }
   }
 

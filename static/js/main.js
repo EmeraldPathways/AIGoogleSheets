@@ -24,7 +24,15 @@ const store = createStore({
 
 function errorText(err) {
   const requestRef = err?.requestId ? ` | requestId=${err.requestId}` : '';
-  return String(err?.message || err) + requestRef;
+  if (err?.message) return String(err.message) + requestRef;
+  if (typeof err === 'object') {
+    try {
+      return JSON.stringify(err) + requestRef;
+    } catch {
+      return '[unserializable error object]' + requestRef;
+    }
+  }
+  return String(err) + requestRef;
 }
 
 function syncUi(state) {
