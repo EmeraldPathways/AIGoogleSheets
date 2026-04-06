@@ -132,11 +132,13 @@ async function init() {
 
   document.getElementById('load-sheet-btn').addEventListener('click', async () => {
     try {
-      const rawSheet = getValue('spreadsheet-input');
+      setText('results-output', 'Loading sheet data...');
+
+      const rawSheet = getValue('spreadsheet-input') || store.state.spreadsheetId;
       const spreadsheetId = extractSpreadsheetId(rawSheet);
       if (!spreadsheetId) throw new Error('Invalid spreadsheet ID or URL.');
 
-      const range = getValue('range-input') || 'Sheet1!A1:Z200';
+      const range = getValue('range-input') || store.state.range || 'Sheet1!A1:Z200';
       const values = await readSheet(spreadsheetId, range, store.state.accessToken);
       store.state.sheetData = values;
       store.state.spreadsheetId = spreadsheetId;

@@ -19,16 +19,39 @@ function gapiReady() {
   });
 }
 
+async function readSheetViaFetch(spreadsheetId, range, accessToken) {
+  const params = new URLSearchParams({ majorDimension: 'ROWS' });
+  const response = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || `Sheets read failed: ${response.status}`);
+  }
+
+  return payload.values || [];
+}
+
 export async function readSheet(spreadsheetId, range, accessToken) {
   const started = performance.now();
   const result = await retryAsync(async () => {
-    await gapiReady();
-    window.gapi.client.setToken({ access_token: accessToken });
-    const res = await window.gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range,
-    });
-    return res.result.values || [];
+    try {
+      await gapiReady();
+      window.gapi.client.setToken({ access_token: accessToken });
+      const res = await window.gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+      });
+      return res.result.values || [];
+    } catch (err) {
+      return readSheetViaFetch(spreadsheetId, range, accessToken);
+    }
   }, {
     maxAttempts: 2,
     baseDelayMs: 200,
