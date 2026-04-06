@@ -23,11 +23,26 @@ function getActiveSpreadsheetContext() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getActiveSheet();
   var range = sheet.getActiveRange();
+  var dataRange = sheet.getDataRange();
   return {
     spreadsheetId: ss.getId(),
     spreadsheetName: ss.getName(),
     activeSheetName: sheet.getName(),
     activeRangeA1: range ? range.getA1Notation() : null,
+    dataRangeA1: dataRange ? dataRange.getA1Notation() : null,
+  };
+}
+
+function getActiveSheetPayload() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+  var dataRange = sheet.getDataRange();
+  return {
+    spreadsheetId: ss.getId(),
+    spreadsheetName: ss.getName(),
+    activeSheetName: sheet.getName(),
+    range: "'" + sheet.getName().replace(/'/g, "''") + "'!" + dataRange.getA1Notation(),
+    values: dataRange.getValues(),
   };
 }
 

@@ -62,12 +62,22 @@
       function pushContext() {
         google.script.run.withSuccessHandler(function(ctx) {
           document.getElementById('context').textContent =
-            'Sheet: ' + ctx.spreadsheetName + ' | Range: ' + (ctx.activeRangeA1 || 'N/A');
+            'Sheet: ' + ctx.spreadsheetName + ' | Active: ' + (ctx.activeRangeA1 || 'N/A') +
+            ' | Data: ' + (ctx.dataRangeA1 || 'N/A');
           frame.contentWindow.postMessage(
             { source: 'apps-script-sidebar', type: 'HOST_CONTEXT', context: ctx },
             '*'
           );
         }).getActiveSpreadsheetContext();
+      }
+
+      function pushSheetData() {
+        google.script.run.withSuccessHandler(function(payload) {
+          frame.contentWindow.postMessage(
+            { source: 'apps-script-sidebar', type: 'HOST_SHEET_DATA', payload: payload },
+            '*'
+          );
+        }).getActiveSheetPayload();
       }
 
       window.addEventListener('message', function(event) {
@@ -76,6 +86,12 @@
 
         if (data.type === 'APP_READY' || data.type === 'REQUEST_CONTEXT') {
           pushContext();
+          pushSheetData();
+          return;
+        }
+
+        if (data.type === 'REQUEST_SHEET_DATA') {
+          pushSheetData();
           return;
         }
 

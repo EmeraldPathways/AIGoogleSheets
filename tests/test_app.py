@@ -136,7 +136,10 @@ def test_drive_rejects_missing_scope(monkeypatch):
     assert resp.status_code == 403
     body = resp.get_json()
     assert body['error']['code'] == 'google_scope_missing'
-    assert body['error']['details']['missingScopes'] == ['https://www.googleapis.com/auth/drive.file']
+    assert body['error']['details']['missingScopes'] == [
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive.appdata',
+    ]
 
 
 def test_drive_list_verifies_token_then_calls_drive(monkeypatch):
@@ -146,7 +149,7 @@ def test_drive_list_verifies_token_then_calls_drive(monkeypatch):
     tokeninfo.ok = True
     tokeninfo.json.return_value = {
         'issued_to': 'expected-client-id',
-        'scope': 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
+        'scope': 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
         'expires_in': '3599',
     }
 
@@ -171,7 +174,7 @@ def test_drive_save_verifies_token_before_upload(monkeypatch):
     tokeninfo.ok = True
     tokeninfo.json.return_value = {
         'issued_to': 'expected-client-id',
-        'scope': 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
+        'scope': 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
         'expires_in': '3599',
     }
 
@@ -201,7 +204,7 @@ def test_drive_save_rejects_version_conflict(monkeypatch):
     tokeninfo.ok = True
     tokeninfo.json.return_value = {
         'issued_to': 'expected-client-id',
-        'scope': 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
+        'scope': 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
         'expires_in': '3599',
     }
 
@@ -225,7 +228,7 @@ def test_drive_restore_by_session(monkeypatch):
     tokeninfo.ok = True
     tokeninfo.json.return_value = {
         'issued_to': 'expected-client-id',
-        'scope': 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
+        'scope': 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
         'expires_in': '3599',
     }
 

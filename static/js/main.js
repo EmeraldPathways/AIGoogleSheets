@@ -102,15 +102,29 @@ function syncSheetInputsFromState() {
 async function init() {
   const cfg = await loadServerConfig();
   store.state.config = cfg;
-  const sidebarBridge = createSidebarBridge(store, restoreSessionIntoStore, (context) => {
-    syncSheetInputsFromState();
-    setText(
-      'host-output',
-      context
-        ? `Connected to ${context.spreadsheetName} | ${context.activeSheetName} | ${context.activeRangeA1 || 'No range'}`
-        : 'No sidebar context available.',
-    );
-  });
+  const sidebarBridge = createSidebarBridge(
+    store,
+    restoreSessionIntoStore,
+    (context) => {
+      syncSheetInputsFromState();
+      setText(
+        'host-output',
+        context
+          ? `Connected to ${context.spreadsheetName} | ${context.activeSheetName} | ${context.activeRangeA1 || 'No range'}`
+          : 'No sidebar context available.',
+      );
+    },
+    (payload) => {
+      store.state.spreadsheetId = payload.spreadsheetId || store.state.spreadsheetId;
+      store.state.range = payload.range || store.state.range;
+      store.state.sheetData = Array.isArray(payload.values) ? payload.values : [];
+      if (store.state.sheetData.length > 0) {
+        store.state.appState = APP_STATES.DATA_LOADED;
+        setText('results-output', `Loaded ${Math.max(store.state.sheetData.length - 1, 0)} data rows from current sheet.`);
+      }
+      syncSheetInputsFromState();
+    },
+  );
   document.body.dataset.embedded = String(sidebarBridge.isEmbedded());
 
   const auth = createAuthClient(cfg.googleClientId, cfg.scopes, (token, scope) => {
@@ -129,6 +143,7 @@ async function init() {
 
   document.getElementById('sync-sidebar-btn').addEventListener('click', () => {
     sidebarBridge.requestContext();
+    sidebarBridge.requestSheetData();
     setText('host-output', 'Requested fresh sheet context from sidebar host.');
   });
 
