@@ -16,6 +16,10 @@ const store = createStore({
   range: 'Sheet1!A1:Z200',
   sheetData: [],
   result: null,
+  hostConnected: false,
+  hostRowsReceived: false,
+  hostLastEvent: 'Waiting for sidebar host.',
+  hostContextSummary: '',
   savedSessions: [],
   activeSessionId: '',
   latestSessionVersion: 0,
@@ -50,6 +54,30 @@ function summarizeScope(scope = '') {
   return parts.join(', ');
 }
 
+function selectedRowCount(rangeText = '') {
+  const match = String(rangeText).match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/i);
+  if (!match) return null;
+  const start = Number(match[2]);
+  const end = Number(match[4]);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  return Math.abs(end - start) + 1;
+}
+
+function suggestedTaskText(state) {
+  const rangeLabel = state.range || 'the current sheet';
+  const rowCount = selectedRowCount(rangeLabel);
+  if (rowCount && rowCount <= 20) {
+    return `Suggestion: summarize the selected range ${rangeLabel}.`;
+  }
+  if (state.sheetData.length > 100) {
+    return `Suggestion: find anomalies in ${rangeLabel} before running broader summaries.`;
+  }
+  if (state.sheetData.length > 0) {
+    return `Suggestion: summarize ${rangeLabel} with ${Math.max(state.sheetData.length - 1, 0)} loaded rows.`;
+  }
+  return 'Suggestion: load host sheet data, then analyze the active selection.';
+}
+
 async function loadSheetDataIntoStore(spreadsheetId, range, accessToken, sourceLabel = 'sheet') {
   const values = await readSheet(spreadsheetId, range, accessToken);
   store.state.sheetData = values;
@@ -63,25 +91,40 @@ function syncUi(state) {
   const signedIn = Boolean(state.accessToken);
   const driveEnabled = hasDriveScope(state.oauthScope);
   const embedded = document.body.dataset.embedded === 'true';
+  const hasSheetData = state.sheetData.length > 0;
+  const canUseEmbeddedHost = embedded && hasSheetData;
   const authSummary = signedIn
     ? `Signed in${state.oauthScope ? ` | ${summarizeScope(state.oauthScope)}` : ''}`
-    : 'Not signed in';
-  const sheetSummary = state.sheetData.length > 0
+    : embedded
+      ? 'Not signed in | optional for host analysis'
+      : 'Not signed in';
+  const sheetSummary = hasSheetData
     ? `${Math.max(state.sheetData.length - 1, 0)} rows loaded`
     : 'No sheet data';
   const driveSummary = driveEnabled ? 'Drive save enabled' : 'Drive not enabled';
+  const hostBridgeSummary = !embedded
+    ? 'Host bridge: standalone'
+    : state.hostConnected
+      ? 'Host bridge: connected'
+      : 'Host bridge: waiting';
+  const hostRowsSummary = state.hostRowsReceived
+    ? `Rows: ${Math.max(state.sheetData.length - 1, 0)}`
+    : 'Rows: waiting';
 
   setText('auth-status', authSummary);
   setText('session-status', state.activeSessionId ? `Session ${state.activeSessionId} v${state.latestSessionVersion}` : 'No saved Drive session yet.');
   setText('auth-pill', authSummary);
   setText('sheet-pill', sheetSummary);
   setText('drive-pill', driveSummary);
+  setText('host-bridge-pill', hostBridgeSummary);
+  setText('host-rows-pill', hostRowsSummary);
+  setText('task-suggestion', suggestedTaskText(state));
   setDisabled('sign-in-btn', signedIn);
   setDisabled('sign-in-drive-btn', !signedIn || driveEnabled);
   setDisabled('sign-out-btn', !signedIn);
   setDisabled('load-sheet-btn', !signedIn);
-  setDisabled('load-sheet-btn-embedded', !signedIn || !embedded);
-  setDisabled('analyze-btn', !signedIn || state.sheetData.length === 0 || state.appState === APP_STATES.ANALYZING);
+  setDisabled('load-sheet-btn-embedded', !embedded);
+  setDisabled('analyze-btn', (!signedIn && !canUseEmbeddedHost) || !hasSheetData || state.appState === APP_STATES.ANALYZING);
   setDisabled('save-drive-btn', !signedIn || !state.result || !driveEnabled);
   setDisabled('list-drive-btn', !signedIn || !driveEnabled);
   setDisabled('restore-drive-btn', !signedIn || !driveEnabled);
@@ -141,6 +184,13 @@ async function init() {
     store,
     restoreSessionIntoStore,
     (context) => {
+      store.state.hostConnected = Boolean(context);
+      store.state.hostLastEvent = context
+        ? `Host context received for ${context.activeSheetName}.`
+        : 'No sidebar context available.';
+      store.state.hostContextSummary = context
+        ? `${context.spreadsheetName} | ${context.activeSheetName} | ${context.activeRangeA1 || 'No selection'}`
+        : '';
       syncSheetInputsFromState();
       setText(
         'host-summary',
@@ -151,19 +201,29 @@ async function init() {
       setText(
         'host-output',
         context
-          ? `Connected to ${context.spreadsheetName} | ${context.activeSheetName} | ${context.activeRangeA1 || 'No range'}`
+          ? `Connected to ${context.spreadsheetName} | ${context.activeSheetName} | ${context.activeRangeA1 || 'No range'}\n${store.state.hostLastEvent}`
           : 'No sidebar context available.',
       );
     },
     (payload) => {
+      const rows = Array.isArray(payload.values) ? payload.values : [];
       store.state.spreadsheetId = payload.spreadsheetId || store.state.spreadsheetId;
       store.state.range = payload.range || store.state.range;
-      store.state.sheetData = Array.isArray(payload.values) ? payload.values : [];
+      store.state.sheetData = rows;
+      store.state.hostConnected = true;
+      store.state.hostRowsReceived = rows.length > 0;
+      store.state.hostLastEvent = rows.length > 0
+        ? `Host sheet data received: ${Math.max(rows.length - 1, 0)} rows from ${payload.range || 'current sheet'}.`
+        : 'Host responded, but no sheet rows were returned.';
       if (store.state.sheetData.length > 0) {
         store.state.appState = APP_STATES.DATA_LOADED;
         setText('results-output', `Loaded ${Math.max(store.state.sheetData.length - 1, 0)} data rows from current sheet.`);
       }
       syncSheetInputsFromState();
+      setText(
+        'host-output',
+        `${store.state.hostContextSummary || 'Connected to sidebar host.'}\n${store.state.hostLastEvent}`,
+      );
     },
   );
   document.body.dataset.embedded = String(sidebarBridge.isEmbedded());
@@ -183,9 +243,10 @@ async function init() {
   document.getElementById('sign-out-btn').addEventListener('click', () => auth.signOut());
 
   const requestHostSheet = () => {
+    store.state.hostLastEvent = 'Requested fresh context and sheet rows from sidebar host.';
     sidebarBridge.requestContext();
     sidebarBridge.requestSheetData();
-    setText('host-output', 'Requested fresh sheet context from sidebar host.');
+    setText('host-output', store.state.hostLastEvent);
   };
 
   document.getElementById('sync-sidebar-btn').addEventListener('click', requestHostSheet);
@@ -196,7 +257,7 @@ async function init() {
 
       const spreadsheetId = store.state.spreadsheetId;
       const range = store.state.range || 'Sheet1!A1:Z200';
-      if (!spreadsheetId) return;
+      if (!store.state.accessToken || !spreadsheetId) return;
 
       await loadSheetDataIntoStore(spreadsheetId, range, store.state.accessToken, 'current sheet');
     } catch (err) {

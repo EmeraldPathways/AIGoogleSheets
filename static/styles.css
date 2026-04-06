@@ -29,6 +29,11 @@ body {
   gap: 0.6rem;
 }
 
+.compact-status-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0.8rem;
+}
+
 .status-pill {
   padding: 0.75rem 0.9rem;
   border-radius: 999px;
@@ -127,6 +132,7 @@ pre {
 .hint {
   color: #334155;
   margin-bottom: 0.7rem;
+  font-size: 0.9rem;
 }
 
 body[data-embedded="true"] .standalone-only {
@@ -154,6 +160,10 @@ body[data-embedded="true"] h1 {
 body[data-embedded="true"] .status-grid {
   grid-template-columns: 1fr;
   gap: 0.45rem;
+}
+
+body[data-embedded="true"] .compact-status-grid {
+  grid-template-columns: 1fr 1fr;
 }
 
 body[data-embedded="true"] .panel {
@@ -199,6 +209,11 @@ body[data-embedded="true"] .button-row {
 body[data-embedded="true"] .meta-card {
   font-size: 0.84rem;
   padding: 0.65rem 0.75rem;
+}
+
+body[data-embedded="true"] .hint {
+  font-size: 0.8rem;
+  margin-bottom: 0.55rem;
 }
 
 @media (max-width: 720px) {
