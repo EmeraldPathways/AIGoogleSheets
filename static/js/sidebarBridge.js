@@ -15,7 +15,9 @@ export function createSidebarBridge(store, onRestoreSession, onHostContext) {
       store.state.spreadsheetId = hostContext.spreadsheetId;
     }
     if (hostContext.activeRangeA1) {
-      store.state.range = hostContext.activeRangeA1;
+      store.state.range = hostContext.activeSheetName
+        ? `${hostContext.activeSheetName}!${hostContext.activeRangeA1}`
+        : hostContext.activeRangeA1;
     }
   }
 
