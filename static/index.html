@@ -27,7 +27,7 @@
         <div class="button-row">
           <button id="sign-in-btn">Sign in with Google</button>
           <button id="sign-in-drive-btn" disabled>Enable Drive Save</button>
-          <button id="sign-out-btn" disabled>Sign out</button>
+          <button id="sign-out-btn" class="visually-hidden-control" disabled>Sign out</button>
         </div>
       </section>
 
@@ -60,8 +60,8 @@
 
       <section class="panel" id="analysis-panel">
         <h2>Analyze</h2>
-        <label>Provider</label>
-        <select id="provider-select">
+        <label class="visually-hidden-control" for="provider-select">Provider</label>
+        <select id="provider-select" class="visually-hidden-control">
           <option value="kimi">Kimi (primary)</option>
           <option value="openai">OpenAI</option>
         </select>
@@ -71,25 +71,27 @@
           <option value="find anomalies">Find anomalies</option>
           <option value="categorize rows">Categorize rows</option>
         </select>
-        <p class="hint" id="task-suggestion">Suggestion: waiting for sheet context.</p>
+        <p class="hint visually-hidden-control" id="task-suggestion">Suggestion: waiting for sheet context.</p>
         <button id="analyze-btn" disabled>Run Analysis</button>
       </section>
 
-      <section class="panel embedded-only-collapsed" id="drive-panel">
-        <h2>Drive</h2>
-        <p id="session-status">No saved Drive session yet.</p>
-        <div class="button-row">
-          <button id="save-drive-btn" disabled>Save to Drive</button>
-          <button id="list-drive-btn" disabled>List Sessions</button>
-        </div>
-        <label>Restore by Session ID</label>
-        <input id="restore-session-id" placeholder="Optional session id" />
-        <label>Restore Version</label>
-        <input id="restore-version" placeholder="Latest if blank" />
-        <label>Or Restore by Drive File ID</label>
-        <input id="restore-file-id" placeholder="Optional drive file id" />
-        <button id="restore-drive-btn" disabled>Restore Session</button>
-        <pre id="drive-output">No Drive operations yet.</pre>
+      <section class="panel" id="drive-panel">
+        <details class="host-details">
+          <summary>Drive</summary>
+          <p id="session-status">No saved Drive session yet.</p>
+          <div class="button-row">
+            <button id="save-drive-btn" disabled>Save to Drive</button>
+            <button id="list-drive-btn" disabled>List Sessions</button>
+          </div>
+          <label>Restore by Session ID</label>
+          <input id="restore-session-id" placeholder="Optional session id" />
+          <label>Restore Version</label>
+          <input id="restore-version" placeholder="Latest if blank" />
+          <label>Or Restore by Drive File ID</label>
+          <input id="restore-file-id" placeholder="Optional drive file id" />
+          <button id="restore-drive-btn" disabled>Restore Session</button>
+          <pre id="drive-output">No Drive operations yet.</pre>
+        </details>
       </section>
 
       <section class="panel" id="results-panel">

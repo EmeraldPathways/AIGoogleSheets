@@ -102,6 +102,10 @@ body {
   display: block;
 }
 
+.visually-hidden-control {
+  display: none !important;
+}
+
 h1, h2 {
   margin-top: 0;
 }
@@ -206,8 +210,7 @@ body[data-embedded="true"] .panel {
   border-radius: 14px;
 }
 
-body[data-embedded="true"] #auth-panel,
-body[data-embedded="true"] #drive-panel {
+body[data-embedded="true"] #auth-panel {
   display: none;
 }
 
@@ -224,6 +227,10 @@ body[data-embedded="true"] #results-panel {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+}
+
+body[data-embedded="true"] #drive-panel {
+  order: 4;
 }
 
 body[data-embedded="true"] #host-output,
