@@ -139,8 +139,9 @@ function syncUi(state) {
   setText('host-bridge-pill', hostBridgeSummary);
   setText('host-rows-pill', hostRowsSummary);
   setText('task-suggestion', suggestedTaskText(state));
+  setText('sign-in-drive-btn', signedIn ? 'Enable Drive Save' : 'Sign in to enable Drive');
   setDisabled('sign-in-btn', signedIn);
-  setDisabled('sign-in-drive-btn', !signedIn || driveEnabled);
+  setDisabled('sign-in-drive-btn', driveEnabled);
   setDisabled('sign-out-btn', !signedIn);
   setDisabled('load-sheet-btn', !signedIn);
   setDisabled('load-sheet-btn-embedded', !embedded);
