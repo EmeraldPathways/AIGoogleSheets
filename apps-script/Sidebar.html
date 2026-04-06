@@ -58,25 +58,60 @@
     </div>
     <script>
       var frame = document.getElementById('app-frame');
+      var frameReady = false;
+      var queuedMessages = [];
+
+      frame.addEventListener('load', function() {
+        frameReady = true;
+        flushQueuedMessages();
+      });
+
+      function flushQueuedMessages() {
+        while (frameReady && queuedMessages.length) {
+          frame.contentWindow.postMessage(queuedMessages.shift(), '*');
+        }
+      }
+
+      function postToFrame(message) {
+        if (!frameReady || !frame.contentWindow) {
+          queuedMessages.push(message);
+          return;
+        }
+        frame.contentWindow.postMessage(message, '*');
+      }
+
+      function normalizeValues(values) {
+        return (values || []).map(function(row) {
+          return (row || []).map(function(cell) {
+            if (cell instanceof Date) {
+              return cell.toISOString();
+            }
+            if (cell === null || cell === undefined) {
+              return '';
+            }
+            return cell;
+          });
+        });
+      }
 
       function pushContext() {
         google.script.run.withSuccessHandler(function(ctx) {
           document.getElementById('context').textContent =
             'Sheet: ' + ctx.spreadsheetName + ' | Active: ' + (ctx.activeRangeA1 || 'N/A') +
             ' | Data: ' + (ctx.dataRangeA1 || 'N/A');
-          frame.contentWindow.postMessage(
-            { source: 'apps-script-sidebar', type: 'HOST_CONTEXT', context: ctx },
-            '*'
-          );
+          postToFrame({ source: 'apps-script-sidebar', type: 'HOST_CONTEXT', context: ctx });
         }).getActiveSpreadsheetContext();
       }
 
       function pushSheetData() {
         google.script.run.withSuccessHandler(function(payload) {
-          frame.contentWindow.postMessage(
-            { source: 'apps-script-sidebar', type: 'HOST_SHEET_DATA', payload: payload },
-            '*'
-          );
+          payload = payload || {};
+          payload.values = normalizeValues(payload.values);
+          document.getElementById('context').textContent =
+            'Sheet: ' + (payload.spreadsheetName || 'Unknown') +
+            ' | Active: ' + ((payload.range || '').split('!')[1] || 'N/A') +
+            ' | Rows: ' + Math.max((payload.values || []).length - 1, 0);
+          postToFrame({ source: 'apps-script-sidebar', type: 'HOST_SHEET_DATA', payload: payload });
         }).getActiveSheetPayload();
       }
 
@@ -97,19 +132,13 @@
 
         if (data.type === 'INSERT_RESULT') {
           google.script.run.withSuccessHandler(function(result) {
-            frame.contentWindow.postMessage(
-              { source: 'apps-script-sidebar', type: 'INSERT_RESULT_ACK', result: result },
-              '*'
-            );
+            postToFrame({ source: 'apps-script-sidebar', type: 'INSERT_RESULT_ACK', result: result });
           }).insertAnalysisResult(data.payload || {});
           return;
         }
 
         if (data.type === 'RESTORE_SESSION') {
-          frame.contentWindow.postMessage(
-            { source: 'apps-script-sidebar', type: 'RESTORED_SESSION', session: data.session },
-            '*'
-          );
+          postToFrame({ source: 'apps-script-sidebar', type: 'RESTORED_SESSION', session: data.session });
         }
       });
 

@@ -180,6 +180,9 @@ function syncSheetInputsFromState() {
 async function init() {
   const cfg = await loadServerConfig();
   store.state.config = cfg;
+  document.body.dataset.embedded = 'false';
+  store.subscribe(syncUi);
+  syncUi(store.state);
   const sidebarBridge = createSidebarBridge(
     store,
     restoreSessionIntoStore,
@@ -204,6 +207,7 @@ async function init() {
           ? `Connected to ${context.spreadsheetName} | ${context.activeSheetName} | ${context.activeRangeA1 || 'No range'}\n${store.state.hostLastEvent}`
           : 'No sidebar context available.',
       );
+      syncUi(store.state);
     },
     (payload) => {
       const rows = Array.isArray(payload.values) ? payload.values : [];
@@ -224,9 +228,11 @@ async function init() {
         'host-output',
         `${store.state.hostContextSummary || 'Connected to sidebar host.'}\n${store.state.hostLastEvent}`,
       );
+      syncUi(store.state);
     },
   );
   document.body.dataset.embedded = String(sidebarBridge.isEmbedded());
+  syncUi(store.state);
 
   const auth = createAuthClient(cfg.googleClientId, cfg.scopes, (token, scope) => {
     store.state.accessToken = token;
@@ -371,8 +377,6 @@ async function init() {
     }
   });
 
-  syncUi(store.state);
-  store.subscribe(syncUi);
   postEvent('app_initialized', { component: 'main', status: 'success' });
 }
 
